@@ -163,7 +163,7 @@
 
   <div id="mappingBox" class="mapping-box">
     <div class="form-group" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
-      <label style="color: var(--primary);">٢. تە دڤێت ل دویڤ کیژ ستوینێ بگەڕی؟ (نموونە: هەژماری هەژمار یان هەر ستوینەک):</label>
+      <label style="color: var(--primary);">٢. تە دڤێت ل دویڤ کیژ ستوینێ بگەڕی؟ (نموونە: هەژماری هەژمار):</label>
       <select id="lookupColumn"></select>
     </div>
 
@@ -176,11 +176,11 @@
 
   <div class="form-group">
     <label>٤. وان داتایێن تە دڤێن بگەڕییێ ل ڤێرە بنڤێسە یان کۆپی بکە (هەر رێزەکێ دانەیەک):</label>
-    <textarea id="targetList" placeholder="هەژماری هەژمار ل ڤێرێ بنڤیسە یان کۆپی بکە
-.....7000
-.....7000
-.....7000
-.....7000"></textarea>
+    <textarea id="targetList" placeholder="هەژماری ئەژمار ل ڤێرێ بنڤیسە یان کۆپی بکە :
+....7000
+....7000
+....7000
+....7000"></textarea>
   </div>
 
   <button class="btn-main" onclick="processData()">دەستپێکرنا جوداکرنێ و دابەزاندنا فایلا نوى</button>
@@ -204,6 +204,29 @@ function showStatus(text, type) {
   status.style.display = 'block';
 }
 
+// دالەیا ڤەگوهاستنا ژمارا ئێکسلێ بۆ مێژوویا روون
+function formatExcelValue(val) {
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  // ئەگەر ژمارا مێژوویا ئێکسلێ بت (نموونە 46287)
+  if (typeof val === 'number' && val > 30000 && val < 60000) {
+    try {
+      const dateObj = XLSX.SSF.parse_date_code(val);
+      if (dateObj) {
+        const y = dateObj.y;
+        const m = String(dateObj.m).padStart(2, '0');
+        const d = String(dateObj.d).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+    } catch (e) {}
+  }
+  return val !== undefined && val !== null ? String(val).trim() : '';
+}
+
 function loadFileColumns() {
   const fileInput = document.getElementById('mainFile');
   if (!fileInput.files.length) return;
@@ -214,9 +237,9 @@ function loadFileColumns() {
   reader.onload = function(e) {
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      globalRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      globalRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
 
       if (globalRows.length === 0) {
         showStatus('فایل ڤالایە یان چو زانیاری تێدا نینن.', 'error');
@@ -255,7 +278,6 @@ function setupDefaultExportColumns() {
   const container = document.getElementById('columnsContainer');
   container.innerHTML = '';
 
-  // دروستکرنا رێزێن سەرەتایی ب تێکست بۆکسێن ڤالا
   addNewColumnRow('account');
   addNewColumnRow('meter');
   addNewColumnRow('date');
@@ -282,7 +304,7 @@ function addNewColumnRow(autoMatchWord = '') {
   input.type = 'text';
   input.className = 'export-col-name';
   input.placeholder = 'ناڤێ ستوینێ د فایلا نوی دا بنڤیسە';
-  input.value = ''; // هەمی تێکست بۆکس ب تەمامی ڤالانە
+  input.value = '';
 
   if (autoMatchWord) {
     const matched = availableHeaders.find(h => h.toLowerCase().includes(autoMatchWord.toLowerCase()));
@@ -332,7 +354,6 @@ function processData() {
     if (colSource) {
       exportConfigs.push({
         source: colSource,
-        // ئەگەر ناڤەک نەهاتبیتە نڤیسین، ناڤێ ستوینا ئەسلی بکاردهینیت
         label: colLabel || colSource
       });
     }
@@ -354,7 +375,7 @@ function processData() {
     if (targetSet.has(currentVal)) {
       const newRowObject = {};
       exportConfigs.forEach(cfg => {
-        newRowObject[cfg.label] = row[cfg.source] !== undefined ? String(row[cfg.source]).trim() : '';
+        newRowObject[cfg.label] = formatExcelValue(row[cfg.source]);
       });
       filtered.push(newRowObject);
     }
