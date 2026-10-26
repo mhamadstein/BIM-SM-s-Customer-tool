@@ -70,12 +70,14 @@
       background: var(--secondary);
       color: white;
       border: none;
-      padding: 0 16px;
+      padding: 0 18px;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
       white-space: nowrap;
+      transition: background 0.2s;
     }
+    .btn-action:hover { background: #1b4f72; }
     .mapping-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -87,10 +89,28 @@
     .names-box {
       background: #fdfefe;
       border: 1px dashed #3498db;
-      padding: 15px;
+      padding: 16px;
       border-radius: 8px;
       margin-bottom: 18px;
     }
+    .divider-text {
+      text-align: center;
+      position: relative;
+      margin: 10px 0;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .divider-text::before, .divider-text::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 45%;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    .divider-text::before { left: 0; }
+    .divider-text::after { right: 0; }
     .col-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
     .col-row select { flex: 1.2; }
     .col-row input { flex: 1.2; }
@@ -159,32 +179,32 @@
     <div class="security-badge">🔒 پاراستنا داتایان: پرۆسێس ۱۰۰٪ د ناڤ براوزەرێ تە دا دهێتە ئەنجامدان</div>
   </div>
 
-  <!-- الملف الأساسي -->
+  <!-- فایلا سەرەکی (تەنها هەڵبژاردنی فایل لە کۆمپیۆتەر) -->
   <div class="form-group">
     <label>١. فایلا سەرەکی یا ئێکسلێ (یا مەزن):</label>
-    <div class="label-hint">دشێی فایلێ ژ کۆمپیۆتەری هەلبژێری یان لینکا Google Drive دانی:</div>
+    <div class="label-hint">فایلا سەرەکی ژ کۆمپیۆتەری هەلبژێره:</div>
     <input type="file" id="mainFile" accept=".xlsx, .xls" onchange="loadFileColumns()" style="margin-top: 5px;" />
-    
-    <div class="input-row">
-      <input type="text" id="mainDriveLink" placeholder="یان لینکا فایلا Google Drive ل ڤێرە دابنێ..." />
-      <button type="button" class="btn-action" onclick="loadDriveMainFile()">ئینان</button>
-    </div>
   </div>
 
-  <!-- ملف الأسماء والشيتات -->
+  <!-- فایلا ناڤان (هەردوو شێواز: فایلی ئۆفلاین یان لینکی درایڤ) -->
   <div class="names-box">
     <label style="color: var(--primary);">٢. فایلا ناڤێن هاوبەشان (ئیختیاری / Optional):</label>
-    <div class="label-hint">فایلا هەمی هەیڤان هەلبژێره یان لینکا وێ یا Google Drive دابنێ:</div>
+    <div class="label-hint">دەتوانیت فایلی ئۆفلاین هەڵبژێریت یان لینکی فایلی Google Drive دابنێیت:</div>
+    
+    <!-- هەڵبژاردنی فایل -->
     <input type="file" id="namesFile" accept=".xlsx, .xls" onchange="loadNamesFile()" style="margin-top: 8px;" />
     
+    <div class="divider-text">یان</div>
+
+    <!-- لینکی Google Drive -->
     <div class="input-row">
-      <input type="text" id="namesDriveLink" placeholder="یان لینکا Google Drive یا فایلا ناڤان ل ڤێرە دابنێ..." />
+      <input type="text" id="namesDriveLink" placeholder="لینکا فایلا Google Drive ل ڤێرە دابنێ..." />
       <button type="button" class="btn-action" onclick="loadDriveNamesFile()">ئینان</button>
     </div>
-    <div id="namesStatus" style="font-size: 12px; color: var(--secondary); margin-top: 5px; font-weight: bold;"></div>
+    <div id="namesStatus" style="font-size: 12px; color: var(--secondary); margin-top: 8px; font-weight: bold;"></div>
   </div>
 
-  <!-- تخصيص الأعمدة -->
+  <!-- ڕێکخستنا ستوینان -->
   <div id="mappingBox" class="mapping-box">
     <div class="form-group" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
       <label style="color: var(--primary);">٣. ستوینا لێگەڕیانێ د فایلا سەرەکی دا (نموونە: Acc / هەژمار):</label>
@@ -198,7 +218,7 @@
     </div>
   </div>
 
-  <!-- القائمة المستهدفة -->
+  <!-- لیستا ژماران -->
   <div class="form-group">
     <label>٥. وان داتایێن تە دڤێن بگەڕییێ ل ڤێرە بنڤێسە یان کۆپی بکە (هەر رێزەکێ دانەیەک):</label>
     <textarea id="targetList" placeholder="70000812492
@@ -213,7 +233,7 @@
 
 <div class="footer">
   ئامادەکرن ژ لایێ: <span class="author-name">Mohammed Khudhir Jameel</span><br>
-  وەشان 1.2 (2026)
+  وەشان 1.4 (2026)
 </div>
 
 <script>
@@ -308,25 +328,6 @@ function loadFileColumns() {
   reader.readAsArrayBuffer(fileInput.files[0]);
 }
 
-async function loadDriveMainFile() {
-  const link = document.getElementById('mainDriveLink').value.trim();
-  if (!link) {
-    showStatus('هیڤیە لینکا Google Drive دابنێ.', 'error');
-    return;
-  }
-  const dlUrl = getDriveDownloadUrl(link);
-  showStatus('چاڤەڕێ بە، فایلا سەرەکی ژ Google Drive دهێتە دابەزاندن...', 'info');
-
-  try {
-    const res = await fetch(dlUrl);
-    if (!res.ok) throw new Error('فایل نەهاتە دیتن یان ڕێپێدان نینە (Public نینە)');
-    const arrayBuffer = await res.arrayBuffer();
-    parseWorkbook(new Uint8Array(arrayBuffer));
-  } catch (err) {
-    showStatus('شاشی د دابەزاندنا فایلا درایڤی دا: ' + err.message + ' (پشتڕاست بە کو فایلا تە Anyone with the link یە).', 'error');
-  }
-}
-
 function parseNamesWorkbook(dataBuffer) {
   const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
   namesMap.clear();
@@ -344,8 +345,8 @@ function parseNamesWorkbook(dataBuffer) {
       nameIdx = headerRow.findIndex(h => h.includes('ناف') || h.includes('نام') || h.includes('name'));
       accIdx = headerRow.findIndex(h => h.includes('هەژمار') || h.includes('حساب') || h.includes('acc'));
 
-      if (nameIdx === -1) nameIdx = 2; // عمود C
-      if (accIdx === -1) accIdx = 3;  // عمود D
+      if (nameIdx === -1) nameIdx = 2; // ستوینا C
+      if (accIdx === -1) accIdx = 3;  // ستوینا D
 
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
@@ -359,7 +360,7 @@ function parseNamesWorkbook(dataBuffer) {
     }
   });
 
-  document.getElementById('namesStatus').textContent = `✓ فایلا ناڤان هاتە خواندن (${workbook.SheetNames.length} شیت پشکنین، ${totalFound} ناڤ هاتنە تۆمارکرن).`;
+  document.getElementById('namesStatus').textContent = `✓ فایلا ناڤان هاتە ئامادەکرن (${workbook.SheetNames.length} شیت هاتنە پشکنین، ${totalFound} ناڤ هاتنە تۆمارکرن).`;
 }
 
 function loadNamesFile() {
@@ -380,17 +381,20 @@ function loadNamesFile() {
 
 async function loadDriveNamesFile() {
   const link = document.getElementById('namesDriveLink').value.trim();
-  if (!link) return;
+  if (!link) {
+    document.getElementById('namesStatus').textContent = 'هیڤیە لینکا درایڤی دابنێ.';
+    return;
+  }
   const dlUrl = getDriveDownloadUrl(link);
-  document.getElementById('namesStatus').textContent = 'فایلا ناڤان ژ Google Drive دهێتە دابەزاندن...';
+  document.getElementById('namesStatus').textContent = 'چاڤەڕێ بە، فایلا ناڤان ژ Google Drive دهێتە دابەزاندن و خواندن...';
 
   try {
     const res = await fetch(dlUrl);
-    if (!res.ok) throw new Error('فایل نەهاتە دیتن یان ڕێپێدان نینە');
+    if (!res.ok) throw new Error('فایل نەهاتە دیتن یان ڕێپێدان گشتی نینە (Public نینە)');
     const arrayBuffer = await res.arrayBuffer();
     parseNamesWorkbook(new Uint8Array(arrayBuffer));
   } catch (err) {
-    document.getElementById('namesStatus').textContent = 'شاشی: ' + err.message;
+    document.getElementById('namesStatus').textContent = 'شاشی: ' + err.message + ' (پشتڕاست بە فایلا تە Anyone with the link یە).';
   }
 }
 
