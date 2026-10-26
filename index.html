@@ -39,16 +39,8 @@
       padding-bottom: 20px;
       margin-bottom: 25px;
     }
-    .header h2 {
-      margin: 0 0 8px 0;
-      color: var(--primary);
-      font-size: 22px;
-    }
-    .header .subtitle {
-      font-size: 13px;
-      color: #7f8c8d;
-      font-weight: 500;
-    }
+    .header h2 { margin: 0 0 8px 0; color: var(--primary); font-size: 22px; }
+    .header .subtitle { font-size: 13px; color: #7f8c8d; font-weight: 500; }
     .security-badge {
       display: inline-block;
       background: #e8f8f5;
@@ -63,7 +55,7 @@
     .form-group { margin-bottom: 18px; }
     label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
     .label-hint { font-size: 12px; font-weight: normal; color: #64748b; margin-top: 2px; }
-    input[type="file"], textarea, select, input[type="text"] {
+    input[type="file"], input[type="text"], textarea, select {
       width: 100%;
       box-sizing: border-box;
       padding: 11px;
@@ -73,6 +65,17 @@
       background: #fff;
     }
     textarea { height: 105px; resize: vertical; }
+    .input-row { display: flex; gap: 8px; margin-top: 6px; }
+    .btn-action {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      white-space: nowrap;
+    }
     .mapping-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -88,12 +91,7 @@
       border-radius: 8px;
       margin-bottom: 18px;
     }
-    .col-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
-    }
+    .col-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
     .col-row select { flex: 1.2; }
     .col-row input { flex: 1.2; }
     .btn-remove {
@@ -149,10 +147,7 @@
       color: #64748b;
       line-height: 1.6;
     }
-    .author-name {
-      font-weight: bold;
-      color: var(--primary);
-    }
+    .author-name { font-weight: bold; color: var(--primary); }
   </style>
 </head>
 <body>
@@ -166,15 +161,26 @@
 
   <!-- الملف الأساسي -->
   <div class="form-group">
-    <label>١. فایلا سەرەکی یا ئێکسلێ (فایلا مەزن) هەلبژێره:</label>
-    <input type="file" id="mainFile" accept=".xlsx, .xls" onchange="loadFileColumns()" />
+    <label>١. فایلا سەرەکی یا ئێکسلێ (یا مەزن):</label>
+    <div class="label-hint">دشێی فایلێ ژ کۆمپیۆتەری هەلبژێری یان لینکا Google Drive دانی:</div>
+    <input type="file" id="mainFile" accept=".xlsx, .xls" onchange="loadFileColumns()" style="margin-top: 5px;" />
+    
+    <div class="input-row">
+      <input type="text" id="mainDriveLink" placeholder="یان لینکا فایلا Google Drive ل ڤێرە دابنێ..." />
+      <button type="button" class="btn-action" onclick="loadDriveMainFile()">ئینان</button>
+    </div>
   </div>
 
-  <!-- ملف الأسماء الاختياري -->
+  <!-- ملف الأسماء والشيتات -->
   <div class="names-box">
     <label style="color: var(--primary);">٢. فایلا ناڤێن هاوبەشان (ئیختیاری / Optional):</label>
-    <div class="label-hint">ئەگەر تە بڤێت ناڤێ هاوبەشی ژی بهێتە زێدەکرن، فایلا هەمی هەیڤان هەلبژێره (هەمی شیت دێ هێنە خواندن).</div>
+    <div class="label-hint">فایلا هەمی هەیڤان هەلبژێره یان لینکا وێ یا Google Drive دابنێ:</div>
     <input type="file" id="namesFile" accept=".xlsx, .xls" onchange="loadNamesFile()" style="margin-top: 8px;" />
+    
+    <div class="input-row">
+      <input type="text" id="namesDriveLink" placeholder="یان لینکا Google Drive یا فایلا ناڤان ل ڤێرە دابنێ..." />
+      <button type="button" class="btn-action" onclick="loadDriveNamesFile()">ئینان</button>
+    </div>
     <div id="namesStatus" style="font-size: 12px; color: var(--secondary); margin-top: 5px; font-weight: bold;"></div>
   </div>
 
@@ -192,7 +198,7 @@
     </div>
   </div>
 
-  <!-- قائمة الأرقام -->
+  <!-- القائمة المستهدفة -->
   <div class="form-group">
     <label>٥. وان داتایێن تە دڤێن بگەڕییێ ل ڤێرە بنڤێسە یان کۆپی بکە (هەر رێزەکێ دانەیەک):</label>
     <textarea id="targetList" placeholder="70000812492
@@ -207,19 +213,30 @@
 
 <div class="footer">
   ئامادەکرن ژ لایێ: <span class="author-name">Mohammed Khudhir Jameel</span><br>
-  وەشان 1.1 (2026)
+  وەشان 1.2 (2026)
 </div>
 
 <script>
 let globalRows = [];
 let availableHeaders = [];
-let namesMap = new Map(); // بۆ پاراستنا هەژمار و ناڤان ژ هەمی شیتان
+let namesMap = new Map();
 
 function showStatus(text, type) {
   const status = document.getElementById('status');
   status.textContent = text;
   status.className = type;
   status.style.display = 'block';
+}
+
+function extractDriveId(url) {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+function getDriveDownloadUrl(driveUrl) {
+  const fileId = extractDriveId(driveUrl);
+  if (!fileId) return driveUrl;
+  return `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`;
 }
 
 function formatExcelValue(val) {
@@ -243,46 +260,47 @@ function formatExcelValue(val) {
   return val !== undefined && val !== null ? String(val).trim() : '';
 }
 
+function parseWorkbook(dataBuffer) {
+  const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  globalRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
+
+  if (globalRows.length === 0) {
+    showStatus('فایل ڤالایە یان چو زانیاری تێدا نینن.', 'error');
+    return;
+  }
+
+  availableHeaders = Object.keys(globalRows[0]);
+  
+  const lookupSelect = document.getElementById('lookupColumn');
+  lookupSelect.innerHTML = '<option value="">-- ستوینا لێگەڕیانێ هەلبژێره --</option>';
+  availableHeaders.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = h;
+    lookupSelect.appendChild(opt);
+  });
+
+  const defaultLookup = availableHeaders.find(h => {
+    const l = h.toLowerCase();
+    return l.includes('acc') || l.includes('هەژمار') || l.includes('account');
+  });
+  if (defaultLookup) lookupSelect.value = defaultLookup;
+
+  setupDefaultExportColumns();
+  document.getElementById('mappingBox').style.display = 'block';
+  showStatus(`فایلا سەرەکی هاتە خواندن (${globalRows.length} تۆمار تێدانە).`, 'success');
+}
+
 function loadFileColumns() {
   const fileInput = document.getElementById('mainFile');
   if (!fileInput.files.length) return;
-
   showStatus('چاڤەڕێ بە، ستوینێن فایلێ د هێنە خواندن...', 'info');
 
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      globalRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
-
-      if (globalRows.length === 0) {
-        showStatus('فایل ڤالایە یان چو زانیاری تێدا نینن.', 'error');
-        return;
-      }
-
-      availableHeaders = Object.keys(globalRows[0]);
-      
-      const lookupSelect = document.getElementById('lookupColumn');
-      lookupSelect.innerHTML = '<option value="">-- ستوینا لێگەڕیانێ هەلبژێره --</option>';
-      availableHeaders.forEach(h => {
-        const opt = document.createElement('option');
-        opt.value = h;
-        opt.textContent = h;
-        lookupSelect.appendChild(opt);
-      });
-
-      const defaultLookup = availableHeaders.find(h => {
-        const l = h.toLowerCase();
-        return l.includes('acc') || l.includes('هەژمار') || l.includes('account');
-      });
-      if (defaultLookup) lookupSelect.value = defaultLookup;
-
-      setupDefaultExportColumns();
-
-      document.getElementById('mappingBox').style.display = 'block';
-      showStatus(`فایلا سەرەکی هاتە خواندن (${globalRows.length} تۆمار تێدانە).`, 'success');
+      parseWorkbook(new Uint8Array(e.target.result));
     } catch (err) {
       showStatus('شاشیەک چێبوو دەمێ خواندنا فایلا سەرەکی: ' + err.message, 'error');
     }
@@ -290,56 +308,90 @@ function loadFileColumns() {
   reader.readAsArrayBuffer(fileInput.files[0]);
 }
 
+async function loadDriveMainFile() {
+  const link = document.getElementById('mainDriveLink').value.trim();
+  if (!link) {
+    showStatus('هیڤیە لینکا Google Drive دابنێ.', 'error');
+    return;
+  }
+  const dlUrl = getDriveDownloadUrl(link);
+  showStatus('چاڤەڕێ بە، فایلا سەرەکی ژ Google Drive دهێتە دابەزاندن...', 'info');
+
+  try {
+    const res = await fetch(dlUrl);
+    if (!res.ok) throw new Error('فایل نەهاتە دیتن یان ڕێپێدان نینە (Public نینە)');
+    const arrayBuffer = await res.arrayBuffer();
+    parseWorkbook(new Uint8Array(arrayBuffer));
+  } catch (err) {
+    showStatus('شاشی د دابەزاندنا فایلا درایڤی دا: ' + err.message + ' (پشتڕاست بە کو فایلا تە Anyone with the link یە).', 'error');
+  }
+}
+
+function parseNamesWorkbook(dataBuffer) {
+  const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
+  namesMap.clear();
+  let totalFound = 0;
+
+  workbook.SheetNames.forEach(sheetName => {
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', header: 1 });
+    
+    if (rows.length > 1) {
+      let nameIdx = -1;
+      let accIdx = -1;
+      
+      const headerRow = rows[0].map(h => String(h).trim().toLowerCase());
+      nameIdx = headerRow.findIndex(h => h.includes('ناف') || h.includes('نام') || h.includes('name'));
+      accIdx = headerRow.findIndex(h => h.includes('هەژمار') || h.includes('حساب') || h.includes('acc'));
+
+      if (nameIdx === -1) nameIdx = 2; // عمود C
+      if (accIdx === -1) accIdx = 3;  // عمود D
+
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const accVal = String(r[accIdx] ?? '').trim();
+        const nameVal = String(r[nameIdx] ?? '').trim();
+        if (accVal && nameVal && !namesMap.has(accVal)) {
+          namesMap.set(accVal, nameVal);
+          totalFound++;
+        }
+      }
+    }
+  });
+
+  document.getElementById('namesStatus').textContent = `✓ فایلا ناڤان هاتە خواندن (${workbook.SheetNames.length} شیت پشکنین، ${totalFound} ناڤ هاتنە تۆمارکرن).`;
+}
+
 function loadNamesFile() {
   const fileInput = document.getElementById('namesFile');
-  const statusLbl = document.getElementById('namesStatus');
   if (!fileInput.files.length) return;
-
-  statusLbl.textContent = 'داتایێن هەمی شیتێن ناڤان د هێنە پشکنین...';
-  namesMap.clear();
+  document.getElementById('namesStatus').textContent = 'داتایێن هەمی شیتێن ناڤان د هێنە پشکنین...';
 
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      
-      let totalFound = 0;
-      workbook.SheetNames.forEach(sheetName => {
-        const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', header: 1 });
-        
-        if (rows.length > 1) {
-          // دیتنا ستوینا ناف و هەژمار ب دیف ناڤێ هیدەری یان شوێنێ وان
-          let nameIdx = -1;
-          let accIdx = -1;
-          
-          const headerRow = rows[0].map(h => String(h).trim().toLowerCase());
-          nameIdx = headerRow.findIndex(h => h.includes('ناف') || h.includes('نام') || h.includes('name'));
-          accIdx = headerRow.findIndex(h => h.includes('هەژمار') || h.includes('حساب') || h.includes('acc'));
-
-          // ئەگەر ناڤێ هیدەران نەهاتە دیتن، ب شێوەیێ ستاندارد عمود C و D (Index 2 و 3) وەردگریت
-          if (nameIdx === -1) nameIdx = 2;
-          if (accIdx === -1) accIdx = 3;
-
-          for (let i = 1; i < rows.length; i++) {
-            const r = rows[i];
-            const accVal = String(r[accIdx] ?? '').trim();
-            const nameVal = String(r[nameIdx] ?? '').trim();
-            if (accVal && nameVal && !namesMap.has(accVal)) {
-              namesMap.set(accVal, nameVal);
-              totalFound++;
-            }
-          }
-        }
-      });
-
-      statusLbl.textContent = `✓ فایلا ناڤان هاتە خواندن (${workbook.SheetNames.length} شیت پشکنین، ${totalFound} ناڤ هاتنە تۆمارکرن).`;
+      parseNamesWorkbook(new Uint8Array(e.target.result));
     } catch (err) {
-      statusLbl.textContent = 'شاشیەک چێبوو د خواندنا فایلا ناڤان دا: ' + err.message;
+      document.getElementById('namesStatus').textContent = 'شاشیەک چێبوو د خواندنا فایلا ناڤان دا: ' + err.message;
     }
   };
   reader.readAsArrayBuffer(fileInput.files[0]);
+}
+
+async function loadDriveNamesFile() {
+  const link = document.getElementById('namesDriveLink').value.trim();
+  if (!link) return;
+  const dlUrl = getDriveDownloadUrl(link);
+  document.getElementById('namesStatus').textContent = 'فایلا ناڤان ژ Google Drive دهێتە دابەزاندن...';
+
+  try {
+    const res = await fetch(dlUrl);
+    if (!res.ok) throw new Error('فایل نەهاتە دیتن یان ڕێپێدان نینە');
+    const arrayBuffer = await res.arrayBuffer();
+    parseNamesWorkbook(new Uint8Array(arrayBuffer));
+  } catch (err) {
+    document.getElementById('namesStatus').textContent = 'شاشی: ' + err.message;
+  }
 }
 
 function setupDefaultExportColumns() {
@@ -381,9 +433,7 @@ function addNewColumnRow(autoMatchWord = '') {
   removeBtn.type = 'button';
   removeBtn.className = 'btn-remove';
   removeBtn.textContent = '✕';
-  removeBtn.onclick = function() {
-    container.removeChild(div);
-  };
+  removeBtn.onclick = function() { container.removeChild(div); };
 
   div.appendChild(select);
   div.appendChild(input);
@@ -393,19 +443,15 @@ function addNewColumnRow(autoMatchWord = '') {
 
 function processData() {
   if (globalRows.length === 0) {
-    showStatus('هیڤیە بەری هەر تشتەکی فایلا ئێکسلا مەزن هەلبژێره.', 'error');
+    showStatus('هیڤیە بەری هەر تشتەکی فایلا ئێکسلا مەزن دابنێ.', 'error');
     return;
   }
 
   const lookupCol = document.getElementById('lookupColumn').value;
   const targetText = document.getElementById('targetList').value.trim();
 
-  if (!lookupCol) {
-    showStatus('هیڤیە ستوینا لێگەڕیانێ دیار بکە.', 'error');
-    return;
-  }
-  if (!targetText) {
-    showStatus('هیڤیە داتایێن تە دڤێن بگەڕییێ د چوارچووڤەی دا بنڤێسە.', 'error');
+  if (!lookupCol || !targetText) {
+    showStatus('هیڤیە ستوینا لێگەڕیانێ و داتایان دیار بکە.', 'error');
     return;
   }
 
@@ -433,15 +479,12 @@ function processData() {
 
     if (targetSet.has(currentVal)) {
       const newRowObject = {};
-      
-      // ناڤێ ستوینا هەژمارێ بدەستڤەبینە بۆ دیتنا ناڤێ وی د فایلا ناڤان دا
       const accNumber = String(row[lookupCol] ?? '').trim();
 
       exportConfigs.forEach(cfg => {
         newRowObject[cfg.label] = formatExcelValue(row[cfg.source]);
       });
 
-      // ئەگەر فایلا ناڤان بارکرى بت، ستوینا ناف بێخە د فایلێ دا
       if (namesMap.size > 0) {
         newRowObject['ناف'] = namesMap.get(accNumber) || 'نەهاتیە دیتن';
       }
@@ -451,7 +494,7 @@ function processData() {
   }
 
   if (filtered.length === 0) {
-    showStatus('چو داتا ل دویڤ وان داتایێن تە د ناڤ وێ ستوینێ دا نەهاتنە دیتن.', 'error');
+    showStatus('چو داتا ل دویڤ وان داتایێن تە نەهاتنە دیتن.', 'error');
     return;
   }
 
@@ -460,7 +503,7 @@ function processData() {
   XLSX.utils.book_append_sheet(newWb, newWs, "داتایێن_جوداکری");
   XLSX.writeFile(newWb, "Filtered_Subscribers.xlsx");
 
-  showStatus(`سەرکەفتن! داتایێن (${filtered.length}) هاوبەشان هاتنە جوداکرن و فایلا نوى ب ناڤێن وان هاتە دابەزاندن.`, 'success');
+  showStatus(`سەرکەفتن! داتایێن (${filtered.length}) هاوبەشان هاتنە جوداکرن و فایلا نوى هاتە دابەزاندن.`, 'success');
 }
 </script>
 
