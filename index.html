@@ -64,7 +64,7 @@
       font-size: 14px;
       background: #fff;
     }
-    textarea { height: 105px; resize: vertical; }
+    textarea { height: 120px; resize: vertical; }
     .input-row { display: flex; gap: 8px; margin-top: 6px; }
     .btn-action {
       background: var(--secondary);
@@ -154,7 +154,8 @@
       padding: 12px;
       border-radius: 7px;
       display: none;
-      line-height: 1.5;
+      line-height: 1.6;
+      white-space: pre-line;
     }
     .info { background: #ebf5fb; color: #1b4f72; border: 1px solid #aed6f1; }
     .success { background: #eafaf1; color: #145a32; border: 1px solid #a9dfbf; }
@@ -179,24 +180,22 @@
     <div class="security-badge">🔒 پاراستنا داتایان: پرۆسێس ۱۰۰٪ د ناڤ براوزەرێ تە دا دهێتە ئەنجامدان</div>
   </div>
 
-  <!-- فایلا سەرەکی (تەنها هەڵبژاردنی فایل لە کۆمپیۆتەر) -->
+  <!-- ١. فایلا سەرەکی -->
   <div class="form-group">
     <label>١. فایلا سەرەکی یا ئێکسلێ (یا مەزن):</label>
     <div class="label-hint">فایلا سەرەکی ژ کۆمپیۆتەری هەلبژێره:</div>
-    <input type="file" id="mainFile" accept=".xlsx, .xls" onchange="loadFileColumns()" style="margin-top: 5px;" />
+    <input type="file" id="mainFile" accept=".xlsx, .xls, .csv" onchange="loadFileColumns()" style="margin-top: 5px;" />
   </div>
 
-  <!-- فایلا ناڤان (هەردوو شێواز: فایلی ئۆفلاین یان لینکی درایڤ) -->
+  <!-- ٢. فایلا ناڤان -->
   <div class="names-box">
     <label style="color: var(--primary);">٢. فایلا ناڤێن هاوبەشان (ئیختیاری / Optional):</label>
-    <div class="label-hint">دەتوانیت فایلی ئۆفلاین هەڵبژێریت یان لینکی فایلی Google Drive دابنێیت:</div>
+    <div class="label-hint">دشێی فایلا ناڤان ژ کۆمپیۆتەری هەلبژێری یان لینکا Google Drive دابنێی:</div>
     
-    <!-- هەڵبژاردنی فایل -->
-    <input type="file" id="namesFile" accept=".xlsx, .xls" onchange="loadNamesFile()" style="margin-top: 8px;" />
+    <input type="file" id="namesFile" accept=".xlsx, .xls, .csv" onchange="loadNamesFile()" style="margin-top: 8px;" />
     
     <div class="divider-text">یان</div>
 
-    <!-- لینکی Google Drive -->
     <div class="input-row">
       <input type="text" id="namesDriveLink" placeholder="لینکا فایلا Google Drive ل ڤێرە دابنێ..." />
       <button type="button" class="btn-action" onclick="loadDriveNamesFile()">ئینان</button>
@@ -204,7 +203,7 @@
     <div id="namesStatus" style="font-size: 12px; color: var(--secondary); margin-top: 8px; font-weight: bold;"></div>
   </div>
 
-  <!-- ڕێکخستنا ستوینان -->
+  <!-- ٣ و ٤. ڕێکخستنا ستوینان -->
   <div id="mappingBox" class="mapping-box">
     <div class="form-group" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
       <label style="color: var(--primary);">٣. ستوینا لێگەڕیانێ د فایلا سەرەکی دا (نموونە: Acc / هەژمار):</label>
@@ -218,7 +217,7 @@
     </div>
   </div>
 
-  <!-- لیستا ژماران -->
+  <!-- ٥. لیستا ژماران -->
   <div class="form-group">
     <label>٥. وان داتایێن تە دڤێن بگەڕییێ ل ڤێرە بنڤێسە یان کۆپی بکە (هەر رێزەکێ دانەیەک):</label>
     <textarea id="targetList" placeholder="70000812492
@@ -233,7 +232,7 @@
 
 <div class="footer">
   ئامادەکرن ژ لایێ: <span class="author-name">Mohammed Khudhir Jameel</span><br>
-  وەشان 1.4 (2026)
+  وەشان 1.5 (2026)
 </div>
 
 <script>
@@ -248,6 +247,33 @@ function showStatus(text, type) {
   status.style.display = 'block';
 }
 
+// دالەیا پاقژکرن و ستانداردکرنا ژمارا هەژمارێ (چارەسەرکرنا هەمی شاشیێن نەخواندنێ)
+function normalizeKey(val) {
+  if (val === undefined || val === null) return '';
+  
+  let str = '';
+  if (typeof val === 'number') {
+    // ڕێگری ژ فۆرماتا زانستی وەک 7.00008E+10
+    str = Number.isInteger(val) ? String(val) : String(Math.trunc(val));
+  } else {
+    str = String(val);
+  }
+
+  // ١. گوهۆڕینا ژمارێن عەرەبی و کوردی بۆ ئینگلیزی
+  const arabicNums = '٠١٢٣٤٥٦٧٨٩';
+  const persianNums = '۰۱۲۳۴۵۶۷۸۹';
+  str = str.replace(/[٠-٩]/g, d => arabicNums.indexOf(d))
+           .replace(/[۰-۹]/g, d => persianNums.indexOf(d));
+
+  // ٢. لادانا هەمی هێمایێن نەدیار (Invisible chars) و بۆشاییان
+  str = str.replace(/[\u200B-\u200F\u202A-\u202E\uFEFF\u00A0\s]/g, '');
+
+  // ٣. ئەگەر ژمارە ب فاریزە یان .0 هاتبت (وەک 70,000,812,492 یان 70000812492.0)
+  str = str.replace(/,/g, '').replace(/\.0+$/, '');
+
+  return str.trim().toLowerCase();
+}
+
 function extractDriveId(url) {
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
   return match ? match[1] : null;
@@ -259,17 +285,25 @@ function getDriveDownloadUrl(driveUrl) {
   return `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`;
 }
 
-function formatExcelValue(val) {
+// فۆرماتکرنا مێژوویێ ب دروستی بێی تێکدانا ژمارێن هەژماران
+function formatExcelValue(val, colName = '') {
+  if (val === undefined || val === null || val === '') return '';
+
   if (val instanceof Date) {
     const y = val.getFullYear();
     const m = String(val.getMonth() + 1).padStart(2, '0');
     const d = String(val.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
-  if (typeof val === 'number' && val > 30000 && val < 60000) {
+
+  const colLower = String(colName).toLowerCase();
+  const isDateCol = colLower.includes('date') || colLower.includes('مێژوو') || colLower.includes('رێکەفت') || colLower.includes('تاريخ');
+
+  // ئەگەر ژمارا مێژوویا ئێکسلێ بت (نموونە 46287)
+  if (typeof val === 'number' && val > 35000 && val < 60000 && (isDateCol || !Number.isInteger(val))) {
     try {
       const dateObj = XLSX.SSF.parse_date_code(val);
-      if (dateObj) {
+      if (dateObj && dateObj.y >= 2000 && dateObj.y <= 2050) {
         const y = dateObj.y;
         const m = String(dateObj.m).padStart(2, '0');
         const d = String(dateObj.d).padStart(2, '0');
@@ -277,20 +311,36 @@ function formatExcelValue(val) {
       }
     } catch (e) {}
   }
-  return val !== undefined && val !== null ? String(val).trim() : '';
+
+  if (typeof val === 'number') {
+    return Number.isInteger(val) ? String(val) : String(val);
+  }
+
+  return String(val).trim();
 }
 
 function parseWorkbook(dataBuffer) {
-  const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-  globalRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
+  // بکارئینانا raw: true دا کو ژمارێن ١١ خانەیی نەبنە 7.00008E+10
+  const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: false });
+  globalRows = [];
+  const headerSet = new Set();
+
+  // خواندنا هەمی شیتێن د ناڤ فایلا سەرەکی دا
+  workbook.SheetNames.forEach(sheetName => {
+    const sheet = workbook.Sheets[sheetName];
+    const sheetRows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: true });
+    if (sheetRows.length > 0) {
+      Object.keys(sheetRows[0]).forEach(k => headerSet.add(k));
+      globalRows = globalRows.concat(sheetRows);
+    }
+  });
 
   if (globalRows.length === 0) {
     showStatus('فایل ڤالایە یان چو زانیاری تێدا نینن.', 'error');
     return;
   }
 
-  availableHeaders = Object.keys(globalRows[0]);
+  availableHeaders = Array.from(headerSet);
   
   const lookupSelect = document.getElementById('lookupColumn');
   lookupSelect.innerHTML = '<option value="">-- ستوینا لێگەڕیانێ هەلبژێره --</option>';
@@ -303,13 +353,13 @@ function parseWorkbook(dataBuffer) {
 
   const defaultLookup = availableHeaders.find(h => {
     const l = h.toLowerCase();
-    return l.includes('acc') || l.includes('هەژمار') || l.includes('account');
+    return l.includes('acc') || l.includes('هەژمار') || l.includes('هژمار') || l.includes('account') || l.includes('حساب');
   });
   if (defaultLookup) lookupSelect.value = defaultLookup;
 
   setupDefaultExportColumns();
   document.getElementById('mappingBox').style.display = 'block';
-  showStatus(`فایلا سەرەکی هاتە خواندن (${globalRows.length} تۆمار تێدانە).`, 'success');
+  showStatus(`فایلا سەرەکی هاتە خواندن (${workbook.SheetNames.length} شیت، سەرجەمێ ${globalRows.length} تۆمار تێدانە).`, 'success');
 }
 
 function loadFileColumns() {
@@ -329,31 +379,43 @@ function loadFileColumns() {
 }
 
 function parseNamesWorkbook(dataBuffer) {
-  const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: true });
+  const workbook = XLSX.read(dataBuffer, { type: 'array', cellDates: false });
   namesMap.clear();
   let totalFound = 0;
 
   workbook.SheetNames.forEach(sheetName => {
     const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', header: 1 });
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', header: 1, raw: true });
     
     if (rows.length > 1) {
       let nameIdx = -1;
       let accIdx = -1;
-      
-      const headerRow = rows[0].map(h => String(h).trim().toLowerCase());
-      nameIdx = headerRow.findIndex(h => h.includes('ناف') || h.includes('نام') || h.includes('name'));
-      accIdx = headerRow.findIndex(h => h.includes('هەژمار') || h.includes('حساب') || h.includes('acc'));
+      let startRow = 1;
+
+      // پشکنینا ١٠ رێزێن دەستپێکێ بۆ دیتنا ناڤونیشانێن ستوینان (ناڤ / هەژمار)
+      for (let rIdx = 0; rIdx < Math.min(10, rows.length); rIdx++) {
+        const candidateHeader = rows[rIdx].map(h => String(h ?? '').trim().toLowerCase());
+        const nIdx = candidateHeader.findIndex(h => h.includes('ناڤ') || h.includes('ناف') || h.includes('ناو') || h.includes('نام') || h.includes('اسم') || h.includes('name'));
+        const aIdx = candidateHeader.findIndex(h => h.includes('هەژمار') || h.includes('هژمار') || h.includes('حساب') || h.includes('acc'));
+        
+        if (nIdx !== -1 || aIdx !== -1) {
+          nameIdx = nIdx;
+          accIdx = aIdx;
+          startRow = rIdx + 1;
+          break;
+        }
+      }
 
       if (nameIdx === -1) nameIdx = 2; // ستوینا C
       if (accIdx === -1) accIdx = 3;  // ستوینا D
 
-      for (let i = 1; i < rows.length; i++) {
+      for (let i = startRow; i < rows.length; i++) {
         const r = rows[i];
-        const accVal = String(r[accIdx] ?? '').trim();
+        if (!r) continue;
+        const accKey = normalizeKey(r[accIdx]);
         const nameVal = String(r[nameIdx] ?? '').trim();
-        if (accVal && nameVal && !namesMap.has(accVal)) {
-          namesMap.set(accVal, nameVal);
+        if (accKey && nameVal && !namesMap.has(accKey)) {
+          namesMap.set(accKey, nameVal);
           totalFound++;
         }
       }
@@ -394,122 +456,4 @@ async function loadDriveNamesFile() {
     const arrayBuffer = await res.arrayBuffer();
     parseNamesWorkbook(new Uint8Array(arrayBuffer));
   } catch (err) {
-    document.getElementById('namesStatus').textContent = 'شاشی: ' + err.message + ' (پشتڕاست بە فایلا تە Anyone with the link یە).';
-  }
-}
-
-function setupDefaultExportColumns() {
-  const container = document.getElementById('columnsContainer');
-  container.innerHTML = '';
-  addNewColumnRow('acc');
-  addNewColumnRow('date');
-  addNewColumnRow('meter');
-  addNewColumnRow('comment');
-}
-
-function addNewColumnRow(autoMatchWord = '') {
-  const container = document.getElementById('columnsContainer');
-  const div = document.createElement('div');
-  div.className = 'col-row';
-
-  const select = document.createElement('select');
-  select.className = 'export-col-select';
-  select.innerHTML = '<option value="">-- ستوینەکێ ژ فایلێ هەلبژێره --</option>';
-  
-  availableHeaders.forEach(h => {
-    const opt = document.createElement('option');
-    opt.value = h;
-    opt.textContent = h;
-    select.appendChild(opt);
-  });
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'export-col-name';
-  input.placeholder = 'ناڤێ ستوینێ د فایلا نوی دا بنڤیسە';
-
-  if (autoMatchWord) {
-    const matched = availableHeaders.find(h => h.toLowerCase().includes(autoMatchWord.toLowerCase()));
-    if (matched) select.value = matched;
-  }
-
-  const removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.className = 'btn-remove';
-  removeBtn.textContent = '✕';
-  removeBtn.onclick = function() { container.removeChild(div); };
-
-  div.appendChild(select);
-  div.appendChild(input);
-  div.appendChild(removeBtn);
-  container.appendChild(div);
-}
-
-function processData() {
-  if (globalRows.length === 0) {
-    showStatus('هیڤیە بەری هەر تشتەکی فایلا ئێکسلا مەزن دابنێ.', 'error');
-    return;
-  }
-
-  const lookupCol = document.getElementById('lookupColumn').value;
-  const targetText = document.getElementById('targetList').value.trim();
-
-  if (!lookupCol || !targetText) {
-    showStatus('هیڤیە ستوینا لێگەڕیانێ و داتایان دیار بکە.', 'error');
-    return;
-  }
-
-  const rowsSelectors = document.querySelectorAll('.col-row');
-  const exportConfigs = [];
-
-  rowsSelectors.forEach(row => {
-    const colSource = row.querySelector('.export-col-select').value;
-    const colLabel = row.querySelector('.export-col-name').value.trim();
-    if (colSource) {
-      exportConfigs.push({
-        source: colSource,
-        label: colLabel || colSource
-      });
-    }
-  });
-
-  const targetSet = new Set(
-    targetText.split('\n').map(t => t.trim()).filter(Boolean)
-  );
-
-  const filtered = [];
-  for (const row of globalRows) {
-    const currentVal = String(row[lookupCol] ?? '').trim();
-
-    if (targetSet.has(currentVal)) {
-      const newRowObject = {};
-      const accNumber = String(row[lookupCol] ?? '').trim();
-
-      exportConfigs.forEach(cfg => {
-        newRowObject[cfg.label] = formatExcelValue(row[cfg.source]);
-      });
-
-      if (namesMap.size > 0) {
-        newRowObject['ناف'] = namesMap.get(accNumber) || 'نەهاتیە دیتن';
-      }
-
-      filtered.push(newRowObject);
-    }
-  }
-
-  if (filtered.length === 0) {
-    showStatus('چو داتا ل دویڤ وان داتایێن تە نەهاتنە دیتن.', 'error');
-    return;
-  }
-
-  const newWs = XLSX.utils.json_to_sheet(filtered);
-  const newWb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(newWb, newWs, "داتایێن_جوداکری");
-  XLSX.writeFile(newWb, "Filtered_Subscribers.xlsx");
-
-  showStatus(`سەرکەفتن! داتایێن (${filtered.length}) هاوبەشان هاتنە جوداکرن و فایلا نوى هاتە دابەزاندن.`, 'success');
-}
-</script>
-
-</body>
-</html>
+    document.getElement
